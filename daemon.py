@@ -1,4 +1,3 @@
-
 import os
 import logging
 import socket
@@ -21,8 +20,8 @@ class LinkUtilProbe(DatagramProtocol):
     '''
     def __init__(self):
         self.rate = 1
-        self.hdr = Ether(type=0x88, src="11:22:33:44:55:66", dst="77:88:99:aa:bb:cc") / IP(src="10.0.0.1", dst="10.0.0.2")
-        self.data = bytearray(os.urandom(random.randint(0, 10)))
+        self.hdr = Ether(type=0x808, src="11:22:33:44:55:66", dst="ff:ff:ff:ff:ff:ff") 
+        self.data = "\x06\x07\x08"
 
     def construct(self):
         pkt = PacketList()

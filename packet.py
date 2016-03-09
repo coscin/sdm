@@ -1,26 +1,47 @@
 
-import os
-import logging
-import socket
-import sys
-import errno
-
-
-import collections
-import logging
-
+import os, logging, logging.config, subprocess, struct, time, json
 from scapy.all import *
 
-all_pkts = collections.OrderedDict()
+coscin_config = {}
+switch = None
+
+def determine_rtt():
+  rtt = []
+  for ah in coscin_config["alternate_hosts"][switch]:
+    util = 255      # Default to max
+    try:
+      response = subprocess.check_output("ping -c 5 "+ah, shell=True)
+      match = re.search("min/avg/max/mdev = ([\d.]+)/([\d.]+)", response)
+      if match:
+        util = int(float(match.group(2)))
+        if util > 255:
+          util = 255
+    # If ping bombs out, default to max rtt
+    except subprocess.CalledProcessError:
+      pass
+    except:
+      logging.error("Unexpected error")
+      raise
+    rtt.append(util)
+  return rtt 
 
 def gen_report_packet():
-    pkt = PacketList()
-    hdr = Ether(type=0x808, src="a0:36:9f:51:2c:3a", dst="ff:ff:ff:ff:ff:ff") 
-    data = "\x06\x07\x08"
-    pkt.append(hdr/Raw(data))
-    all_pkts['reportcard'] = pkt
+  hdr = Ether(type=0x808, dst="ff:ff:ff:ff:ff:ff") 
+  rtt = determine_rtt()
+  logging.info("Calculated Roundtrip Times: "+str(rtt))
+  data = struct.pack("BBB",rtt[0],rtt[1],rtt[2])
+  pkt = hdr/Raw(data)
+  try:
+    sendp(pkt, iface="eth1", verbose=False)
+  except:
+    # Don't go to ridiculous lengths to send the utilization packet.  Just error.  
+    logging.error("Error sending utilization packet")
 
 if __name__ == "__main__":
+  logging.config.fileConfig("coscin_log.conf")
+  f = open(os.getenv("COSCIN_CFG_FILE", "coscin_gates_testbed.json"), "r")
+  coscin_config = json.load(f)  
+  switch = os.getenv("COSCIN_SWITCH", "ithaca")
+  while True:
     gen_report_packet()
-    for k, v in all_pkts.iteritems():
-        sendp(v, iface="eth5", loop=300,inter=60)
+    time.sleep(coscin_config["probe_interval"])

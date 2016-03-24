@@ -7,7 +7,7 @@ switch = None
 
 def determine_rtt():
   rtt = []
-  for ah in coscin_config[switch]["target_hosts"]:
+  for ah in coscin_config["alternate_hosts"][switch]:
     util = 255      # Default to max
     try:
       response = subprocess.check_output("ping -c 5 "+ah, shell=True)
@@ -32,7 +32,7 @@ def gen_report_packet():
   data = struct.pack("BBB",rtt[0],rtt[1],rtt[2])
   pkt = hdr/Raw(data)
   try:
-    sendp(pkt, iface=coscin_config[switch]["reporting_interface"], verbose=False)
+    sendp(pkt, iface="eth1", verbose=False)
   except:
     # Don't go to ridiculous lengths to send the utilization packet.  Just error.  
     logging.error("Error sending utilization packet")

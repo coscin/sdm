@@ -1,0 +1,13 @@
+{
+  "probe_interval": 60,
+  "ithaca": {
+    "reporting_interface": "eth4",
+    "target_hosts": [ "157.139.64.130", "157.139.64.130", "157.139.64.130" ]
+  },
+  "nyc": {
+    "reporting_interface": "eth1",
+    "target_hosts": [ "132.236.137.98", "132.236.137.98", "132.236.137.98" ]
+  }
+}
+
+
